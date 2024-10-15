@@ -102,15 +102,19 @@ public class Animal {
     @Id
     private String id;
 
+    @Size(max=30)
+    private String owner;
+
     @Size(min=3, max=20)
     private String name;
 
-    @Size(min=16, max=16)
+    @Size(min=31, max=31)
     private String genCode;
 
     public Animal() {}
 
-    public Animal(String name, String genCode) {
+    public Animal(String owner, String name, String genCode) {
+        this.owner = owner;
         this.name = name;
         this.genCode = genCode;
     }
@@ -133,8 +137,8 @@ public class Animal {
     }
 
     private Genom combineGenoms(Genom firstParentGenom, Genom secondParentGenCode) {
-        boolean gender = ((int)(Math.random()*2) == 1);
-        boolean isCarnivour = ((int)(Math.random()*2) == 1);
+        boolean gender = ((int)(Math.random()*2) < 1);
+        boolean isCarnivour = ((int)(Math.random()*2) < 1);
 
         Color combinedBaseColor = Color.combineColors(firstParentGenom.baseColor, secondParentGenCode.baseColor);
         Color combinedEyeColor = Color.combineColors(firstParentGenom.eyeColor, secondParentGenCode.eyeColor);
@@ -148,19 +152,19 @@ public class Animal {
         return new Genom(gender, isCarnivour, combinedBaseColor, combinedEyeColor, combinedSpecialColor, enviroment, hasClaws, hasSpikes);
     }
 
-    public Animal breed(String name, String firstParentGenCode, String secondParentGenCode) {
-        Genom firstParentGenom = analyzeParentString(firstParentGenCode);
+    public Animal breed(String owner, String name, String secondParentGenCode) {
+        Genom firstParentGenom = analyzeParentString(this.genCode);
         Genom secondParentGenom = analyzeParentString(secondParentGenCode);
 
         Genom combinedGenom = combineGenoms(firstParentGenom, secondParentGenom);
         String combinedStringifiedGenom = combinedGenom.toHexString();
 
-        return new Animal(name, combinedStringifiedGenom);
+        return new Animal(owner, name, combinedStringifiedGenom);
     }
 
-    public static String generateAnimalGeneticCode() {
-        String gender = Integer.toHexString((int) Math.random() * 2);
-        String carnivour = Integer.toHexString((int) Math.random() * 2);
+    public static String generateWildAnimalGeneticCode() {
+        String gender = Integer.toHexString((int) (Math.random() * 2));
+        String carnivour = Integer.toHexString((int) (Math.random() * 2));
 
         String baseColorR = Integer.toHexString((int) (Math.random() * 256));
         String baseColorG = Integer.toHexString((int) (Math.random() * 256));
@@ -179,12 +183,24 @@ public class Animal {
 
         String enviroment = Integer.toHexString((int) (Math.random() * 4));
 
-        String claws = Integer.toHexString((int) Math.random() * 2);
-        String spikes = Integer.toHexString((int) Math.random() * 2);
+        String claws = Integer.toHexString((int) (Math.random() * 2));
+        String spikes = Integer.toHexString((int) (Math.random() * 2));
 
         return gender + carnivour + "x" + baseColorR + baseColorG + baseColorB +
         baseColorA + eyeColorR + eyeColorG + eyeColorB + eyeColorA +
         specialColorR + specialColorG + specialColorB + specialColorA +
         enviroment + claws + spikes;
+    }
+
+    public String getOwner() {
+        return this.owner;
+    }
+
+    public String getName() {
+        return this.name;
+    }
+
+    public String getGenome() {
+        return this.genCode;
     }
 }
