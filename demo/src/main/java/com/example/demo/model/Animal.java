@@ -150,12 +150,24 @@ public class Animal {
         boolean hasClaws = (Math.random() >= 0.5) ? firstParentGenom.hasClaws : secondParentGenCode.hasClaws;
         boolean hasSpikes = (Math.random() >= 0.5) ? firstParentGenom.hasSpikes : secondParentGenCode.hasSpikes;
 
-        return new Genom(gender, isCarnivour, combinedBaseColor, combinedEyeColor, combinedSpecialColor, enviroment, hasClaws, hasSpikes);
+        double mutationEpsilon = Math.random();
+        double mutationThreshold = 0.05;
+
+        if(mutationEpsilon<=mutationThreshold) {
+            combinedBaseColor = Color.combineColors(combinedBaseColor, new Color("ffffffff"));
+            combinedEyeColor = Color.combineColors(combinedEyeColor, new Color("ff0000ff"));
+            combinedSpecialColor = Color.combineColors(combinedSpecialColor, new Color("ffffffff"));
+        }
+
+        Genom combinedGenom =  new Genom(gender, isCarnivour, combinedBaseColor, combinedEyeColor, combinedSpecialColor, enviroment, hasClaws, hasSpikes);
+        return combinedGenom;
     }
 
     public Animal breed(String owner, String name, String secondParentGenCode) {
         Genom firstParentGenom = analyzeParentString(this.genCode);
         Genom secondParentGenom = analyzeParentString(secondParentGenCode);
+
+        if(firstParentGenom.gender == secondParentGenom.gender) throw new IllegalArgumentException("Genders can't be the same!");
 
         Genom combinedGenom = combineGenoms(firstParentGenom, secondParentGenom);
         String combinedStringifiedGenom = combinedGenom.toHexString();

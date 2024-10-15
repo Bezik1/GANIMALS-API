@@ -8,8 +8,8 @@ import com.example.demo.repository.UserRepository;
 import jakarta.validation.Valid;
 
 import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+// import org.slf4j.Logger;
+// import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -79,20 +79,16 @@ public class UserController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
-    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+    //private static final Logger logger = LoggerFactory.getLogger(UserController.class);
 
     @PostMapping("/breedAnimal")
     public ResponseEntity<Animal> breedAnimal(@RequestBody BreedAnimalReq breedAnimalReq) {
         User user = userRepository.findByEmail(breedAnimalReq.getUserEmail());
 
-        logger.info("User: {}", user);
-        logger.info("Email: {}", breedAnimalReq.getUserEmail());
         if (user != null && passwordEncoder.matches(breedAnimalReq.getUserPassword(), user.getPassword())) {
             Optional<Animal> firstParentOpt  = animalRepository.findById(breedAnimalReq.getFirstParentId());
             Optional<Animal> secondParentOpt = animalRepository.findById(breedAnimalReq.getSecondParentId());
 
-            logger.info("First Parent Present: {}", firstParentOpt.isPresent());
-            logger.info("Second Parent Present: {}", secondParentOpt.isPresent());
             if(!firstParentOpt.isPresent() || !secondParentOpt.isPresent()) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
             Animal firstParent = firstParentOpt.get();
@@ -101,11 +97,6 @@ public class UserController {
             String firstParentOwner = firstParent.getOwner();
             String secondParentOwner = secondParent.getOwner();
 
-            logger.info("First Parent Owner: {}", firstParentOwner);
-            logger.info("Second Parent Owner: {}", secondParentOwner);
-            logger.info("UserId: {}", user.getId());
-            logger.info("Condition 1: {}", firstParentOwner == user.getId());
-            logger.info("Condition 2: {}", secondParentOwner == user.getId());
             if (!firstParentOwner.equals(user.getId()) || !secondParentOwner.equals(user.getId())) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
             Animal child = firstParent.breed(user.getName(), breedAnimalReq.getAnimalName(), secondParent.getGenome());
