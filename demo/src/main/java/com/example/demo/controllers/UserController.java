@@ -8,6 +8,8 @@ import com.example.demo.repository.UserRepository;
 import jakarta.validation.Valid;
 
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -17,11 +19,51 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 class BreedAnimalReq {
-    String userEmail;
-    String userPassword;
-    String animalName;
-    String firstParentId;
-    String secondParentId;
+    private String userEmail;
+    private String userPassword;
+    private String animalName;
+    private String firstParentId;
+    private String secondParentId;
+
+    public String getUserEmail() {
+        return userEmail;
+    }
+
+    public void setUserEmail(String userEmail) {
+        this.userEmail = userEmail;
+    }
+
+    public String getUserPassword() {
+        return userPassword;
+    }
+
+    public void setUserPassword(String userPassword) {
+        this.userPassword = userPassword;
+    }
+
+    public String getAnimalName() {
+        return animalName;
+    }
+
+    public void setAnimalName(String animalName) {
+        this.animalName = animalName;
+    }
+
+    public String getFirstParentId() {
+        return firstParentId;
+    }
+
+    public void setFirstParentId(String firstParentId) {
+        this.firstParentId = firstParentId;
+    }
+
+    public String getSecondParentId() {
+        return secondParentId;
+    }
+
+    public void setSecondParentId(String secondParentId) {
+        this.secondParentId = secondParentId;
+    }
 }
 
 @RestController
@@ -37,14 +79,20 @@ public class UserController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+
     @PostMapping("/breedAnimal")
-    public ResponseEntity<Animal> breedAnimal(@Valid @RequestBody BreedAnimalReq breedAnimalReq) {
-        User user = userRepository.findByEmail(breedAnimalReq.userEmail);
+    public ResponseEntity<Animal> breedAnimal(@RequestBody BreedAnimalReq breedAnimalReq) {
+        User user = userRepository.findByEmail(breedAnimalReq.getUserEmail());
 
-        if (user != null && passwordEncoder.matches(breedAnimalReq.userPassword, user.getPassword())) {
-            Optional<Animal> firstParentOpt  = animalRepository.findById(breedAnimalReq.firstParentId);
-            Optional<Animal> secondParentOpt = animalRepository.findById(breedAnimalReq.secondParentId);
+        logger.info("User: {}", user);
+        logger.info("Email: {}", breedAnimalReq.getUserEmail());
+        if (user != null && passwordEncoder.matches(breedAnimalReq.getUserPassword(), user.getPassword())) {
+            Optional<Animal> firstParentOpt  = animalRepository.findById(breedAnimalReq.getFirstParentId());
+            Optional<Animal> secondParentOpt = animalRepository.findById(breedAnimalReq.getSecondParentId());
 
+            logger.info("First Parent Present: {}", firstParentOpt.isPresent());
+            logger.info("Second Parent Present: {}", secondParentOpt.isPresent());
             if(!firstParentOpt.isPresent() || !secondParentOpt.isPresent()) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
             Animal firstParent = firstParentOpt.get();
@@ -53,11 +101,17 @@ public class UserController {
             String firstParentOwner = firstParent.getOwner();
             String secondParentOwner = secondParent.getOwner();
 
-            if(firstParentOwner != user.getId() || secondParentOwner != user.getId()) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            logger.info("First Parent Owner: {}", firstParentOwner);
+            logger.info("Second Parent Owner: {}", secondParentOwner);
+            logger.info("UserId: {}", user.getId());
+            logger.info("Condition 1: {}", firstParentOwner == user.getId());
+            logger.info("Condition 2: {}", secondParentOwner == user.getId());
+            if (!firstParentOwner.equals(user.getId()) || !secondParentOwner.equals(user.getId())) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
-            Animal child = firstParent.breed(user.getName(), breedAnimalReq.animalName, secondParent.getGenome());
+            Animal child = firstParent.breed(user.getName(), breedAnimalReq.getAnimalName(), secondParent.getGenome());
+            Animal savedChild = animalRepository.save(child);
 
-            return ResponseEntity.status(HttpStatus.OK).body(child);
+            return ResponseEntity.status(HttpStatus.OK).body(savedChild);
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }

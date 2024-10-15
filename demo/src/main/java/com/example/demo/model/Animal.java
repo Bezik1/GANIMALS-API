@@ -34,11 +34,13 @@ class Color {
     int a;
 
     public Color(String hexString) {
-        int r = Integer.parseInt(hexString.substring(0, 2));
-        int g = Integer.parseInt(hexString.substring(2, 4));
-        int b = Integer.parseInt(hexString.substring(4, 6));
-        int a = Integer.parseInt(hexString.substring(6, 8));
-        
+        if (hexString.length() != 8) throw new IllegalArgumentException("Hex string must be 8 characters long. But it is: " + hexString.length());
+
+        int r = Integer.parseInt(hexString.substring(0, 2), 16);
+        int g = Integer.parseInt(hexString.substring(2, 4), 16);
+        int b = Integer.parseInt(hexString.substring(4, 6), 16);
+        int a = Integer.parseInt(hexString.substring(6, 8), 16);
+
         this.hex = hexString;
         this.r = r;
         this.g = g;
@@ -120,8 +122,8 @@ public class Animal {
     }
 
     private Genom analyzeParentString(String parentString) {
-        boolean gender = (parentString.substring(0, 1) == "1");
-        boolean isCarnivour = (parentString.substring(1, 2) == "1");
+        boolean gender = parentString.charAt(0) == '1';
+        boolean isCarnivour = parentString.charAt(1) == '1';
 
         Color baseColor = new Color(parentString.substring(3, 11));
         Color eyeColor = new Color(parentString.substring(11, 19));
@@ -129,9 +131,8 @@ public class Animal {
 
         int enviroment = Integer.parseInt(parentString.substring(27, 28));
 
-        boolean hasClaws = (parentString.substring(28, 29) == "1");
-        boolean hasSpikes = (parentString.substring(29, 30) == "1");
-
+        boolean hasClaws = parentString.charAt(28) == '1';
+        boolean hasSpikes = parentString.charAt(29) == '1';
 
         return new Genom(gender, isCarnivour, baseColor, eyeColor, specialColor, enviroment, hasClaws, hasSpikes);
     }
@@ -163,33 +164,34 @@ public class Animal {
     }
 
     public static String generateWildAnimalGeneticCode() {
-        String gender = Integer.toHexString((int) (Math.random() * 2));
-        String carnivour = Integer.toHexString((int) (Math.random() * 2));
+        String gender = String.format("%X", (int) (Math.random() * 2));
+        String carnivour = String.format("%X", (int) (Math.random() * 2));
 
-        String baseColorR = Integer.toHexString((int) (Math.random() * 256));
-        String baseColorG = Integer.toHexString((int) (Math.random() * 256));
-        String baseColorB = Integer.toHexString((int) (Math.random() * 256));
-        String baseColorA = Integer.toHexString((int) (Math.random() * 256));
+        String baseColorR = String.format("%02X", (int) (Math.random() * 256));
+        String baseColorG = String.format("%02X", (int) (Math.random() * 256));
+        String baseColorB = String.format("%02X", (int) (Math.random() * 256));
+        String baseColorA = String.format("%02X", (int) (Math.random() * 256));
 
-        String eyeColorR = Integer.toHexString((int) (Math.random() * 256));
-        String eyeColorG = Integer.toHexString((int) (Math.random() * 256));
-        String eyeColorB = Integer.toHexString((int) (Math.random() * 256));
-        String eyeColorA = Integer.toHexString((int) (Math.random() * 256));
+        String eyeColorR = String.format("%02X", (int) (Math.random() * 256));
+        String eyeColorG = String.format("%02X", (int) (Math.random() * 256));
+        String eyeColorB = String.format("%02X", (int) (Math.random() * 256));
+        String eyeColorA = String.format("%02X", (int) (Math.random() * 256));
 
-        String specialColorR = Integer.toHexString((int) (Math.random() * 256));
-        String specialColorG = Integer.toHexString((int) (Math.random() * 256));
-        String specialColorB = Integer.toHexString((int) (Math.random() * 256));
-        String specialColorA = Integer.toHexString((int) (Math.random() * 256));
+        String specialColorR = String.format("%02X", (int) (Math.random() * 256));
+        String specialColorG = String.format("%02X", (int) (Math.random() * 256));
+        String specialColorB = String.format("%02X", (int) (Math.random() * 256));
+        String specialColorA = String.format("%02X", (int) (Math.random() * 256));
 
-        String enviroment = Integer.toHexString((int) (Math.random() * 4));
+        String environment = String.format("%X", (int) (Math.random() * 4));
 
-        String claws = Integer.toHexString((int) (Math.random() * 2));
-        String spikes = Integer.toHexString((int) (Math.random() * 2));
+        String claws = String.format("%X", (int) (Math.random() * 2));
+        String spikes = String.format("%X", (int) (Math.random() * 2));
 
-        return gender + carnivour + "x" + baseColorR + baseColorG + baseColorB +
-        baseColorA + eyeColorR + eyeColorG + eyeColorB + eyeColorA +
-        specialColorR + specialColorG + specialColorB + specialColorA +
-        enviroment + claws + spikes;
+        return gender + carnivour + "x" +
+                baseColorR + baseColorG + baseColorB + baseColorA +
+                eyeColorR + eyeColorG + eyeColorB + eyeColorA +
+                specialColorR + specialColorG + specialColorB + specialColorA +
+                environment + claws + spikes;
     }
 
     public String getOwner() {
