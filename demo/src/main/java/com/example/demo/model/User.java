@@ -21,12 +21,18 @@ public class User {
     @Size(min=5, max=30)
     private String password;
 
+    private float saldo;
+
     public User() {}
 
     public User(String name, String email, String password) {
         this.name = name;
         this.email = email;
         this.password = password;
+    }
+
+    public float getSaldo() {
+        return saldo;
     }
 
     public String getId() {
