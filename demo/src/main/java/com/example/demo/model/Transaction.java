@@ -10,26 +10,25 @@ public class Transaction {
     @Id
     private String id;
 
-    private String senderId;
-    private String recipentId;
+    private String senderEmail;
+    private String recipentEmail;
 
     private String animalId;
 
     @PositiveOrZero
     private float amount;
 
-    private boolean senderApproved;
     private boolean recipentApproved;
 
     private String status;
 
     public Transaction() {}
 
-    public Transaction(String senderId, String recipentId, String animalId, float amount) {
-        this.senderId = senderId;
-        this.recipentId = recipentId;
+    public Transaction(String senderEmail, String recipentEmail, String animalId, float amount) {
+        this.senderEmail = senderEmail;
+        this.recipentEmail = recipentEmail;
         this.animalId = animalId;
-        this.senderApproved = false;
+        this.amount = amount;
         this.recipentApproved = false;
         this.status = "Waiting for approvements";
     }
@@ -39,20 +38,16 @@ public class Transaction {
         this.status = status;
     }
 
-    public void setSenderApproved(boolean senderApproved){
-        this.senderApproved = senderApproved;
-    }
-
     public void setRecipentApproved(boolean recipentApproved){
         this.recipentApproved = recipentApproved;
     }
 
-    public void setSenderId(String senderId) {
-        this.senderId = senderId;
+    public void setSenderEmail(String senderEmail) {
+        this.senderEmail = senderEmail;
     }
 
-    public void setRecipentId(String recipentId) {
-        this.recipentId = recipentId;
+    public void setRecipentEmail(String recipentEmail) {
+        this.recipentEmail = recipentEmail;
     }
 
     public void setAnimalId(String animalId) {
@@ -68,20 +63,16 @@ public class Transaction {
         return status;
     }
 
-    public boolean getSenderApproved() {
-        return senderApproved;
-    }
-
     public boolean getRecipentApproved() {
         return recipentApproved;
     }
 
-    public String getSenderId() {
-        return senderId;
+    public String getSenderEmail() {
+        return senderEmail;
     }
 
-    public String getRecipentId() {
-        return recipentId;
+    public String getRecipentEmail() {
+        return recipentEmail;
     }
 
     public String getAnimalId() {

@@ -15,6 +15,7 @@ public class WebSecurityConfig {
             .authorizeHttpRequests()
                 .requestMatchers("/users/**").permitAll()
                 .requestMatchers("/animals/**").permitAll()
+                .requestMatchers("/transactions/**").permitAll()
                 .anyRequest().authenticated()
             .and()
             .formLogin().disable();

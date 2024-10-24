@@ -47,6 +47,10 @@ public class User {
         return name;
     }
 
+    public void setSaldo(float saldo) {
+        this.saldo = saldo;
+    }
+
     public void setName(String name) {
         this.name = name;
     }

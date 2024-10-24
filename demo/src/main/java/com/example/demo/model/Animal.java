@@ -206,6 +206,10 @@ public class Animal {
                 environment + claws + spikes;
     }
 
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
     public String getOwner() {
         return this.owner;
     }
