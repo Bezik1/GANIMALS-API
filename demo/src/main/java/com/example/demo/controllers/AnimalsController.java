@@ -113,9 +113,6 @@ public class AnimalsController {
 
                 return ResponseEntity.status(HttpStatus.OK).body(updatedAnimal);
             } else {
-                System.err.println("Login Condition: " + loginCondition);
-                System.err.println("Transaction Condition: " + transactionCondition);
-                System.err.println("User Condition: " + (user != null));
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
 

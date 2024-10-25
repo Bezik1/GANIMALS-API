@@ -182,17 +182,17 @@ public class Animal {
         String baseColorR = String.format("%02X", (int) (Math.random() * 256));
         String baseColorG = String.format("%02X", (int) (Math.random() * 256));
         String baseColorB = String.format("%02X", (int) (Math.random() * 256));
-        String baseColorA = String.format("%02X", (int) (Math.random() * 256));
+        String baseColorA = String.format("%02X", (int) (255));
 
         String eyeColorR = String.format("%02X", (int) (Math.random() * 256));
         String eyeColorG = String.format("%02X", (int) (Math.random() * 256));
         String eyeColorB = String.format("%02X", (int) (Math.random() * 256));
-        String eyeColorA = String.format("%02X", (int) (Math.random() * 256));
+        String eyeColorA = String.format("%02X", (int) (255));
 
         String specialColorR = String.format("%02X", (int) (Math.random() * 256));
         String specialColorG = String.format("%02X", (int) (Math.random() * 256));
         String specialColorB = String.format("%02X", (int) (Math.random() * 256));
-        String specialColorA = String.format("%02X", (int) (Math.random() * 256));
+        String specialColorA = String.format("%02X", (int) (255));
 
         String environment = String.format("%X", (int) (Math.random() * 4));
 
