@@ -1,7 +1,9 @@
 package com.example.demo.controllers;
 
+import com.example.demo.model.Admin;
 import com.example.demo.model.Animal;
 import com.example.demo.model.User;
+import com.example.demo.repository.AdminRepository;
 import com.example.demo.repository.AnimalRepository;
 import com.example.demo.repository.UserRepository;
 
@@ -17,7 +19,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+
 class BreedAnimalReq {
+    private float amount;
     private String userEmail;
     private String userPassword;
     private String animalName;
@@ -26,6 +30,10 @@ class BreedAnimalReq {
 
     public String getUserEmail() {
         return userEmail;
+    }
+
+    public void setAmount(float amount) {
+        this.amount = amount;
     }
 
     public void setUserEmail(String userEmail) {
@@ -38,6 +46,10 @@ class BreedAnimalReq {
 
     public void setUserPassword(String userPassword) {
         this.userPassword = userPassword;
+    }
+
+    public float getAmount() {
+        return amount;
     }
 
     public String getAnimalName() {
@@ -78,11 +90,38 @@ public class UserController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private AdminRepository adminRepository;
+
     //private static final Logger logger = LoggerFactory.getLogger(UserController.class);
+
+    @PostMapping("changeRank")
+    public ResponseEntity<Admin> changeRank(@RequestBody Admin admin) {
+        try {
+            User user = userRepository.findByEmail(admin.getEmail());
+            if(user == null) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            userRepository.delete(user);
+
+            String hashedPassword = passwordEncoder.encode(admin.getPassword());
+            admin.setPassword(hashedPassword);
+
+            Admin savedAdmin = adminRepository.save(admin);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedAdmin);
+        } catch(DataIntegrityViolationException e) {
+            System.err.println("Error creating user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).build();
+        } catch(Exception e) {
+            System.err.println("Error creating user: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
 
     @PostMapping("/breedAnimal")
     public ResponseEntity<Animal> breedAnimal(@RequestBody BreedAnimalReq breedAnimalReq) {
+        if(breedAnimalReq.getAmount() < 0) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+
         User user = userRepository.findByEmail(breedAnimalReq.getUserEmail());
+        if((user.getSaldo() - breedAnimalReq.getAmount()) < 0) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
         if (user != null && passwordEncoder.matches(breedAnimalReq.getUserPassword(), user.getPassword())) {
             Optional<Animal> firstParentOpt  = animalRepository.findById(breedAnimalReq.getFirstParentId());
@@ -98,8 +137,11 @@ public class UserController {
 
             if (!firstParentOwner.equals(user.getId()) || !secondParentOwner.equals(user.getId())) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
 
-            Animal child = firstParent.breed(user.getName(), breedAnimalReq.getAnimalName(), secondParent.getGenome());
+            Animal child = firstParent.breed(user.getId(), breedAnimalReq.getAnimalName(), secondParent.getGenome());
             Animal savedChild = animalRepository.save(child);
+
+            user.setSaldo(user.getSaldo()-breedAnimalReq.getAmount());
+            User userSaved = userRepository.save(user);
 
             return ResponseEntity.status(HttpStatus.OK).body(savedChild);
         } else {

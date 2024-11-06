@@ -138,8 +138,8 @@ public class Animal {
     }
 
     private Genom combineGenoms(Genom firstParentGenom, Genom secondParentGenCode) {
-        boolean gender = ((int)(Math.random()*2) < 1);
-        boolean isCarnivour = ((int)(Math.random()*2) < 1);
+        boolean gender = ((int)(Math.random()*2)) < 1;
+        boolean isCarnivour = ((int)(Math.random()*2)) < 1;
 
         Color combinedBaseColor = Color.combineColors(firstParentGenom.baseColor, secondParentGenCode.baseColor);
         Color combinedEyeColor = Color.combineColors(firstParentGenom.eyeColor, secondParentGenCode.eyeColor);
@@ -167,7 +167,7 @@ public class Animal {
         Genom firstParentGenom = analyzeParentString(this.genCode);
         Genom secondParentGenom = analyzeParentString(secondParentGenCode);
 
-        if(firstParentGenom.gender == secondParentGenom.gender) throw new IllegalArgumentException("Genders can't be the same!");
+        if(firstParentGenom.gender == secondParentGenom.gender) throw new IllegalArgumentException("No homo!");
 
         Genom combinedGenom = combineGenoms(firstParentGenom, secondParentGenom);
         String combinedStringifiedGenom = combinedGenom.toHexString();
@@ -204,6 +204,14 @@ public class Animal {
                 eyeColorR + eyeColorG + eyeColorB + eyeColorA +
                 specialColorR + specialColorG + specialColorB + specialColorA +
                 environment + claws + spikes;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 
     public void setOwner(String owner) {

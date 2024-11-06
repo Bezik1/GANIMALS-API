@@ -1,11 +1,13 @@
 package com.example.demo.controllers;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -60,7 +62,6 @@ class ChangeOwnerReq {
         this.newOwnerPassword = newOwnerPassword;
     }
 }
-
 @RestController
 @RequestMapping("/animals")
 public class AnimalsController {
@@ -75,6 +76,16 @@ public class AnimalsController {
 
     @Autowired
     private TransactionRepository transactionRepository;
+
+    @PostMapping("/getUserAnimals/{userId}")
+    public ResponseEntity<List<Animal>> getUserAnimals(@PathVariable String userId) {
+        try {
+            List<Animal> animals = animalRepository.findByOwner(userId);
+            return ResponseEntity.status(HttpStatus.OK).body(animals);
+        } catch(Exception err) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+    }
 
     @PostMapping("/createWildAnimal")
     public ResponseEntity<Animal> createWildAnimal() {
