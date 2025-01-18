@@ -1,103 +1,15 @@
 package com.example.demo.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import com.example.demo.types.Animals.Color;
+import com.example.demo.types.Animals.Genom;
+
 import jakarta.validation.constraints.Size;
-
-//
-// Syntax of Genetic Code:
-//
-// * First single chart is responsible for gender of the animal (0, 1);
-// * Next single chart is responsible for if the animal is carnivour or not (0, 1);
-// * Control chart (x);
-// * Next eight charts are responsible for the base color of the animal (00000000, ffffffff);
-// * Next eight charts are responsible for the eye color of the animal (00000000, ffffffff);
-// * Next eight charts are responsible for the special color of the animal (00000000, ffffffff);
-// * Next chart is responsible for the enviroment in which th animal lives (0, 4): default, jungle, dessert, ice;
-// * Next chart is responsible for the claws (0, 1);
-// * Next chart is responsible for the spikes (0, 1);
-//
-// Additionaly there is a chance for the mutation of the gen, so not necessary
-// the child will be similar to the parents.
-//
-//
-//
-// Example: 01xff00ff00ff00ff00ff0000ff401
-
-class Color {
-    String hex;
-
-    int r;
-    int g;
-    int b;
-    int a;
-
-    public Color(String hexString) {
-        if (hexString.length() != 8) throw new IllegalArgumentException("Hex string must be 8 characters long. But it is: " + hexString.length());
-
-        int r = Integer.parseInt(hexString.substring(0, 2), 16);
-        int g = Integer.parseInt(hexString.substring(2, 4), 16);
-        int b = Integer.parseInt(hexString.substring(4, 6), 16);
-        int a = Integer.parseInt(hexString.substring(6, 8), 16);
-
-        this.hex = hexString;
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        this.a = a;
-    }
-
-    public static Color combineColors(Color firstColor, Color secondColor) {
-        String r = Integer.toHexString((int) ((firstColor.r + secondColor.r) / 2));
-        String g = Integer.toHexString((int) ((firstColor.g + secondColor.g) / 2));
-        String b = Integer.toHexString((int) ((firstColor.b + secondColor.b) / 2));
-        String a = Integer.toHexString((int) ((firstColor.a + secondColor.a) / 2));
-
-        return new Color(r + g + b + a);
-    }
-}
-
-class Genom {
-    boolean gender;
-    boolean isCarnivour;
-
-    Color baseColor;
-    Color eyeColor;
-    Color specialColor;
-
-    int enviroment;
-    boolean hasClaws;
-    boolean hasSpikes;
-
-    public Genom(boolean gender, boolean isCarnivour, Color baseColor,
-                Color eyeColor, Color speciaColor, int enviroment,
-                boolean hasClaws, boolean hasSpikes) {
-        this.gender = gender;
-        this.isCarnivour = isCarnivour;
-
-        this.baseColor = baseColor;
-        this.eyeColor = eyeColor;
-        this.specialColor = speciaColor;
-
-        this.enviroment = enviroment;
-
-        this.hasClaws = hasClaws;
-        this.hasSpikes = hasSpikes;
-    }
-
-    public String toHexString() {
-        String genderString = (this.gender) ? "1" : "0";
-        String isCarnivourString = (this.isCarnivour) ? "1" : "0";
-
-        String hasClawsString = (this.hasClaws) ? "1" : "0";
-        String hasSpikesString = (this.hasSpikes) ? "1" : "0";
-
-        return genderString + isCarnivourString + "x" + this.baseColor.hex +
-        this.eyeColor.hex + this.specialColor.hex + Integer.toString(this.enviroment) +
-        hasClawsString + hasSpikesString;
-    }
-}
 
 @Document(collection = "Animals")
 public class Animal {
@@ -113,7 +25,9 @@ public class Animal {
     @Size(min=31, max=31)
     private String genCode;
 
-    public Animal() {}
+    public Animal() {
+        this.genCode = generateWildAnimalGeneticCode();
+    }
 
     public Animal(String owner, String name, String genCode) {
         this.owner = owner;
@@ -121,53 +35,90 @@ public class Animal {
         this.genCode = genCode;
     }
 
-    private Genom analyzeParentString(String parentString) {
+    public static Genom analyzeParentString(String parentString) {
         boolean gender = parentString.charAt(0) == '1';
-        boolean isCarnivour = parentString.charAt(1) == '1';
 
-        Color baseColor = new Color(parentString.substring(3, 11));
-        Color eyeColor = new Color(parentString.substring(11, 19));
-        Color specialColor = new Color(parentString.substring(19, 27));
+        String carnivourAlleles = parentString.substring(1, 3);
+        boolean isCarnivour = parentString.charAt(4) == '1';
 
-        int enviroment = Integer.parseInt(parentString.substring(27, 28));
+        String baseColorAlleles = parentString.substring(5, 7);
+        Color baseColor = new Color(parentString.substring(7, 15));
 
-        boolean hasClaws = parentString.charAt(28) == '1';
-        boolean hasSpikes = parentString.charAt(29) == '1';
+        String eyeColorAlleles = parentString.substring(15, 17);
+        Color eyeColor = new Color(parentString.substring(17, 25));
 
-        return new Genom(gender, isCarnivour, baseColor, eyeColor, specialColor, enviroment, hasClaws, hasSpikes);
+        String specialColorAlleles = parentString.substring(25, 27);
+        Color specialColor = new Color(parentString.substring(27, 35));
+
+        String environmentAlleles = parentString.substring(35, 37);
+        int environment = Integer.parseInt(parentString.substring(37, 38));
+
+        String clawsAlleles = parentString.substring(38, 40);
+        boolean hasClaws = parentString.charAt(40) == '1';
+
+        String spikesAlleles = parentString.substring(41, 43);
+        boolean hasSpikes = parentString.charAt(43) == '1';
+
+        return new Genom(gender, carnivourAlleles, isCarnivour, baseColorAlleles, baseColor,
+                            eyeColorAlleles, eyeColor, specialColorAlleles, specialColor,
+                            environmentAlleles, environment, clawsAlleles, hasClaws, spikesAlleles, hasSpikes);
     }
 
-    private Genom combineGenoms(Genom firstParentGenom, Genom secondParentGenCode) {
-        boolean gender = ((int)(Math.random()*2)) < 1;
-        boolean isCarnivour = ((int)(Math.random()*2)) < 1;
+    private Genom combineGenoms(Genom firstParentGenom, Genom secondParentGenom) {
+        boolean gender = Math.random() >= 0.5;
 
-        Color combinedBaseColor = Color.combineColors(firstParentGenom.baseColor, secondParentGenCode.baseColor);
-        Color combinedEyeColor = Color.combineColors(firstParentGenom.eyeColor, secondParentGenCode.eyeColor);
-        Color combinedSpecialColor = Color.combineColors(firstParentGenom.specialColor, secondParentGenCode.specialColor);
+        String carnivourAlleles = getCombinedAlleles(firstParentGenom.carnivourAlleles, secondParentGenom.carnivourAlleles);
+        boolean isCarnivour = Math.random() >= 0.5;
 
-        int enviroment = (Math.random() >= 0.5) ? firstParentGenom.enviroment : secondParentGenCode.enviroment;
+        String baseColorAlleles = getCombinedAlleles(firstParentGenom.baseColorAlleles, secondParentGenom.baseColorAlleles);
+        Color combinedBaseColor = Color.combineColors(firstParentGenom.baseColor, secondParentGenom.baseColor, baseColorAlleles);
 
-        boolean hasClaws = (Math.random() >= 0.5) ? firstParentGenom.hasClaws : secondParentGenCode.hasClaws;
-        boolean hasSpikes = (Math.random() >= 0.5) ? firstParentGenom.hasSpikes : secondParentGenCode.hasSpikes;
+        String eyeColorAlleles = getCombinedAlleles(firstParentGenom.eyeColorAlleles, secondParentGenom.eyeColorAlleles);
+        Color combinedEyeColor = Color.combineColors(firstParentGenom.eyeColor, secondParentGenom.eyeColor, eyeColorAlleles);
 
-        double mutationEpsilon = Math.random();
-        double mutationThreshold = 0.05;
+        String specialColorAlleles = getCombinedAlleles(firstParentGenom.specialColorAlleles, secondParentGenom.specialColorAlleles);
+        Color combinedSpecialColor = Color.combineColors(firstParentGenom.specialColor, secondParentGenom.specialColor, specialColorAlleles);
 
-        if(mutationEpsilon<=mutationThreshold) {
-            combinedBaseColor = Color.combineColors(combinedBaseColor, new Color("ffffffff"));
-            combinedEyeColor = Color.combineColors(combinedEyeColor, new Color("ff0000ff"));
-            combinedSpecialColor = Color.combineColors(combinedSpecialColor, new Color("ffffffff"));
+        String environmentAlleles = getCombinedAlleles(firstParentGenom.environmentAlleles, secondParentGenom.environmentAlleles);
+        int environment = Math.random() >= 0.5 ? firstParentGenom.environment : secondParentGenom.environment;
+
+        String clawsAlleles = getCombinedAlleles(firstParentGenom.clawsAlleles, secondParentGenom.clawsAlleles);
+        boolean hasClaws = Math.random() >= 0.5;
+
+        String spikesAlleles = getCombinedAlleles(firstParentGenom.spikesAlleles, secondParentGenom.spikesAlleles);
+        boolean hasSpikes = Math.random() >= 0.5;
+
+        return new Genom(gender, carnivourAlleles, isCarnivour, baseColorAlleles, combinedBaseColor,
+                        eyeColorAlleles, combinedEyeColor, specialColorAlleles, combinedSpecialColor,
+                        environmentAlleles, environment, clawsAlleles, hasClaws, spikesAlleles, hasSpikes);
+    }
+
+    private List<String> getPossibleAllelsCombintations(String alleles1, String alleles2) {
+        List<String> possibleAllelsCombinations = new ArrayList<String>();
+
+        for(int i=0; i<alleles1.length(); i++) {
+            for(int j=0; j<alleles2.length(); j++) {
+                String combination = "" + alleles1.charAt(i) + alleles2.charAt(j);
+                possibleAllelsCombinations.add(combination);
+            }
         }
+        return possibleAllelsCombinations;
+    }
 
-        Genom combinedGenom =  new Genom(gender, isCarnivour, combinedBaseColor, combinedEyeColor, combinedSpecialColor, enviroment, hasClaws, hasSpikes);
-        return combinedGenom;
+    private String getCombinedAlleles(String alleles1, String alleles2) {
+        List<String> possibleAllelsCombinations = getPossibleAllelsCombintations(alleles1, alleles2);
+        int index = (int) (Math.random() * (float) (possibleAllelsCombinations.size()));
+
+        return possibleAllelsCombinations.get(index);
     }
 
     public Animal breed(String owner, String name, String secondParentGenCode) {
         Genom firstParentGenom = analyzeParentString(this.genCode);
         Genom secondParentGenom = analyzeParentString(secondParentGenCode);
 
-        if(firstParentGenom.gender == secondParentGenom.gender) throw new IllegalArgumentException("No homo!");
+        if (firstParentGenom.gender == secondParentGenom.gender) {
+            throw new IllegalArgumentException("Both parents are the same gender!");
+        }
 
         Genom combinedGenom = combineGenoms(firstParentGenom, secondParentGenom);
         String combinedStringifiedGenom = combinedGenom.toHexString();
@@ -177,56 +128,50 @@ public class Animal {
 
     public static String generateWildAnimalGeneticCode() {
         String gender = String.format("%X", (int) (Math.random() * 2));
+
+        String carnivourAlleles = Genom.getRandomAlleles();
         String carnivour = String.format("%X", (int) (Math.random() * 2));
 
-        String baseColorR = String.format("%02X", (int) (Math.random() * 256));
-        String baseColorG = String.format("%02X", (int) (Math.random() * 256));
-        String baseColorB = String.format("%02X", (int) (Math.random() * 256));
-        String baseColorA = String.format("%02X", (int) (255));
+        String baseColorAlleles = Genom.getRandomAlleles();
+        String baseColorR = Color.formatRandomColorChannel();
+        String baseColorG = Color.formatRandomColorChannel();
+        String baseColorB = Color.formatRandomColorChannel();
+        String baseColorA = String.format("%02X", 255);
 
-        String eyeColorR = String.format("%02X", (int) (Math.random() * 256));
-        String eyeColorG = String.format("%02X", (int) (Math.random() * 256));
-        String eyeColorB = String.format("%02X", (int) (Math.random() * 256));
-        String eyeColorA = String.format("%02X", (int) (255));
+        String eyeColorAlleles = Genom.getRandomAlleles();
+        String eyeColorR = Color.formatRandomColorChannel();
+        String eyeColorG = Color.formatRandomColorChannel();
+        String eyeColorB = Color.formatRandomColorChannel();
+        String eyeColorA = String.format("%02X", 255);
 
-        String specialColorR = String.format("%02X", (int) (Math.random() * 256));
-        String specialColorG = String.format("%02X", (int) (Math.random() * 256));
-        String specialColorB = String.format("%02X", (int) (Math.random() * 256));
-        String specialColorA = String.format("%02X", (int) (255));
+        String specialColorAlleles = Genom.getRandomAlleles();
+        String specialColorR = Color.formatRandomColorChannel();
+        String specialColorG = Color.formatRandomColorChannel();
+        String specialColorB = Color.formatRandomColorChannel();
+        String specialColorA = String.format("%02X", 255);
 
+        String environmentAlleles = Genom.getRandomAlleles();
         String environment = String.format("%X", (int) (Math.random() * 4));
 
+        String clawsAlleles = Genom.getRandomAlleles();
         String claws = String.format("%X", (int) (Math.random() * 2));
+
+        String spikesAlleles = Genom.getRandomAlleles();
         String spikes = String.format("%X", (int) (Math.random() * 2));
 
-        return gender + carnivour + "x" +
-                baseColorR + baseColorG + baseColorB + baseColorA +
-                eyeColorR + eyeColorG + eyeColorB + eyeColorA +
-                specialColorR + specialColorG + specialColorB + specialColorA +
-                environment + claws + spikes;
+        return gender + carnivourAlleles + carnivour + "x" +
+                baseColorAlleles + baseColorR + baseColorG + baseColorB + baseColorA +
+                eyeColorAlleles + eyeColorR + eyeColorG + eyeColorB + eyeColorA +
+                specialColorAlleles + specialColorR + specialColorG + specialColorB + specialColorA +
+                environmentAlleles + environment +
+                clawsAlleles + claws +
+                spikesAlleles + spikes;
     }
 
-    public String getId() {
-        return id;
-    }
-
-    public void setId(String id) {
-        this.id = id;
-    }
-
-    public void setOwner(String owner) {
-        this.owner = owner;
-    }
-
-    public String getOwner() {
-        return this.owner;
-    }
-
-    public String getName() {
-        return this.name;
-    }
-
-    public String getGenome() {
-        return this.genCode;
-    }
+    public String getId() { return id; }
+    public void setId(String id) { this.id = id; }
+    public void setOwner(String owner) { this.owner = owner; }
+    public String getOwner() { return this.owner; }
+    public String getName() { return this.name; }
+    public String getGenome() { return this.genCode; }
 }

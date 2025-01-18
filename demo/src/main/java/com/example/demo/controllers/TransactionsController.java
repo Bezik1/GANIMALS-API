@@ -2,8 +2,8 @@ package com.example.demo.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -15,80 +15,15 @@ import com.example.demo.model.Transaction;
 import com.example.demo.model.User;
 import com.example.demo.repository.TransactionRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.types.Response.ErrorResponse;
+import com.example.demo.types.Response.Response;
+import com.example.demo.types.Response.SuccessResponse;
+import com.example.demo.types.Transactions.RecipentApprovementReq;
+import com.example.demo.types.Transactions.SendTransactionReq;
 
+import java.util.List;
 import java.util.Optional;
 import jakarta.validation.Valid;
-
-class RecipentApprovement {
-    private String senderEmail;
-    private String recipentEmail;
-    private String recipentPassword;
-    private boolean accepted;
-
-    //Getters
-    public boolean getAccepted() {
-        return accepted;
-    }
-
-    public String getSenderEmail() {
-        return senderEmail;
-    }
-
-    public String getRecipentEmail() {
-        return recipentEmail;
-    }
-
-    public String getRecipentPassword() {
-        return recipentPassword;
-    }
-
-    // Setters
-    public void setAccepted(boolean accepted) {
-        this.accepted = accepted;
-    }
-
-    public void setSenderEmail(String senderEmail) {
-        this.senderEmail = senderEmail;
-    }
-
-    public void setRecipentEmail(String recipentEmail) {
-        this.recipentEmail = recipentEmail;
-    }
-
-    public void setRecipentPassword(String recipentPassword) {
-        this.recipentPassword = recipentPassword;
-    }
-}
-
-class SendTransactionReq {
-    private Transaction transaction;
-    private String senderPassword;
-
-    public SendTransactionReq() {}
-
-    public SendTransactionReq(Transaction transaction, String senderPassword) {
-        this.transaction = transaction;
-        this.senderPassword = senderPassword;
-    }
-
-    // Setters
-    public void setTransaction(Transaction transaction) {
-        this.transaction = transaction;
-    }
-
-    public void setSenderPassword(String senderPassword) {
-        this.senderPassword = senderPassword;
-    }
-
-    // Getter
-    public Transaction getTransaction() {
-        return transaction;
-    }
-
-    public String getSenderPassword() {
-        return senderPassword;
-    }
-}
 
 @RestController
 @RequestMapping("/transactions")
@@ -102,8 +37,21 @@ public class TransactionsController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @GetMapping("/getTransactions/{recipentEmail}")
+    public Response getUserTransactions(@PathVariable String recipentEmail) {
+        try {
+            User user = userRepository.findByEmail(recipentEmail);
+            if(user == null) return ErrorResponse.httpStatus(HttpStatus.NOT_FOUND);
+
+            List<Transaction> userTransactions = transactionRepository.getTransactionsByRecipentEmail(recipentEmail);
+            return SuccessResponse.httpStatus(HttpStatus.OK).build(userTransactions);
+        } catch(Exception e) {
+            return ErrorResponse.httpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     @PostMapping("/sendTransaction")
-    public ResponseEntity<Transaction> sendTransactionRequest(@Valid @RequestBody SendTransactionReq sendTransactionReq) {
+    public Response sendTransactionRequest(@Valid @RequestBody SendTransactionReq sendTransactionReq) {
         try {
             String senderEmail = sendTransactionReq.getTransaction().getSenderEmail();
             String recipentEmail = sendTransactionReq.getTransaction().getRecipentEmail();
@@ -112,23 +60,23 @@ public class TransactionsController {
 
             if(sender != null && recipent != null && passwordEncoder.matches(sendTransactionReq.getSenderPassword(), sender.getPassword())) {
                 Transaction savedTransaction = transactionRepository.save(sendTransactionReq.getTransaction());
-                return ResponseEntity.status(HttpStatus.OK).body(savedTransaction);
+                return SuccessResponse.httpStatus(HttpStatus.OK).build(savedTransaction);
             } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+                return ErrorResponse.httpStatus(HttpStatus.UNAUTHORIZED);
             }
         } catch(Exception err) {
             System.err.println("Error creating transaction request: " + err.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ErrorResponse.httpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PutMapping("/confirmTransactionTerms/{transactionId}")
-    public ResponseEntity<Transaction> confirmTransactionTerms(@PathVariable String transactionId,
-                                                                @Valid @RequestBody RecipentApprovement recipentApprovement) {
+    public Response confirmTransactionTerms(@PathVariable String transactionId,
+                                                                @Valid @RequestBody RecipentApprovementReq recipentApprovement) {
         try {
             Optional<Transaction> transactionOptional = transactionRepository.findById(transactionId);
 
-            if(!transactionOptional.isPresent()) return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+            if(!transactionOptional.isPresent()) return ErrorResponse.httpStatus(HttpStatus.NOT_FOUND);
             Transaction transaction = transactionOptional.get();
 
             User user = userRepository.findByEmail(recipentApprovement.getSenderEmail());
@@ -138,13 +86,13 @@ public class TransactionsController {
                 transaction.setStatus(recipentApprovement.getAccepted() ? "Recipent Accepted" : "Recipent Rejected");
 
                 Transaction updatedTransaction = transactionRepository.save(transaction);
-                return ResponseEntity.status(HttpStatus.ACCEPTED).body(updatedTransaction);
+                return SuccessResponse.httpStatus(HttpStatus.ACCEPTED).build(updatedTransaction);
             } else {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+                return ErrorResponse.httpStatus(HttpStatus.UNAUTHORIZED);
             }
 
         } catch(Exception err) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ErrorResponse.httpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

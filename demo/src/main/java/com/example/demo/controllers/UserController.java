@@ -6,76 +6,22 @@ import com.example.demo.model.User;
 import com.example.demo.repository.AdminRepository;
 import com.example.demo.repository.AnimalRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.types.Response.ErrorResponse;
+import com.example.demo.types.Response.Response;
+import com.example.demo.types.Response.SuccessResponse;
+import com.example.demo.types.Users.BreedAnimalReq;
 
 import jakarta.validation.Valid;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
-// import org.slf4j.Logger;
-// import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
-class BreedAnimalReq {
-    private float amount;
-    private String userEmail;
-    private String userPassword;
-    private String animalName;
-    private String firstParentId;
-    private String secondParentId;
-
-    public String getUserEmail() {
-        return userEmail;
-    }
-
-    public void setAmount(float amount) {
-        this.amount = amount;
-    }
-
-    public void setUserEmail(String userEmail) {
-        this.userEmail = userEmail;
-    }
-
-    public String getUserPassword() {
-        return userPassword;
-    }
-
-    public void setUserPassword(String userPassword) {
-        this.userPassword = userPassword;
-    }
-
-    public float getAmount() {
-        return amount;
-    }
-
-    public String getAnimalName() {
-        return animalName;
-    }
-
-    public void setAnimalName(String animalName) {
-        this.animalName = animalName;
-    }
-
-    public String getFirstParentId() {
-        return firstParentId;
-    }
-
-    public void setFirstParentId(String firstParentId) {
-        this.firstParentId = firstParentId;
-    }
-
-    public String getSecondParentId() {
-        return secondParentId;
-    }
-
-    public void setSecondParentId(String secondParentId) {
-        this.secondParentId = secondParentId;
-    }
-}
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/users")
@@ -93,41 +39,39 @@ public class UserController {
     @Autowired
     private AdminRepository adminRepository;
 
-    //private static final Logger logger = LoggerFactory.getLogger(UserController.class);
-
     @PostMapping("changeRank")
-    public ResponseEntity<Admin> changeRank(@RequestBody Admin admin) {
+    public Response changeRank(@RequestBody Admin admin) {
         try {
             User user = userRepository.findByEmail(admin.getEmail());
-            if(user == null) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            if(user == null) return ErrorResponse.httpStatus(HttpStatus.BAD_REQUEST).textMessage("User with such id does not exist!");
             userRepository.delete(user);
 
             String hashedPassword = passwordEncoder.encode(admin.getPassword());
             admin.setPassword(hashedPassword);
 
             Admin savedAdmin = adminRepository.save(admin);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedAdmin);
+            return SuccessResponse.httpStatus(HttpStatus.CREATED).build(savedAdmin);
         } catch(DataIntegrityViolationException e) {
             System.err.println("Error creating user: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).build();
+            return ErrorResponse.httpStatus(HttpStatus.UNPROCESSABLE_ENTITY);
         } catch(Exception e) {
             System.err.println("Error creating user: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ErrorResponse.httpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PostMapping("/breedAnimal")
-    public ResponseEntity<Animal> breedAnimal(@RequestBody BreedAnimalReq breedAnimalReq) {
-        if(breedAnimalReq.getAmount() < 0) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    public Response breedAnimal(@RequestBody BreedAnimalReq breedAnimalReq) {
+        if(breedAnimalReq.getAmount() < 0) return ErrorResponse.httpStatus(HttpStatus.BAD_REQUEST).textMessage("Amount must be positive!");
 
-        User user = userRepository.findByEmail(breedAnimalReq.getUserEmail());
-        if((user.getSaldo() - breedAnimalReq.getAmount()) < 0) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        User user = userRepository.findByEmail(breedAnimalReq.getSenderEmail());
+        if((user.getSaldo() - breedAnimalReq.getAmount()) < 0) return ErrorResponse.httpStatus(HttpStatus.BAD_REQUEST).textMessage("You don't have enough amount of money!");
 
-        if (user != null && passwordEncoder.matches(breedAnimalReq.getUserPassword(), user.getPassword())) {
+        if (user != null && passwordEncoder.matches(breedAnimalReq.getSenderPassword(), user.getPassword())) {
             Optional<Animal> firstParentOpt  = animalRepository.findById(breedAnimalReq.getFirstParentId());
             Optional<Animal> secondParentOpt = animalRepository.findById(breedAnimalReq.getSecondParentId());
 
-            if(!firstParentOpt.isPresent() || !secondParentOpt.isPresent()) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            if(!firstParentOpt.isPresent() || !secondParentOpt.isPresent()) return ErrorResponse.httpStatus(HttpStatus.BAD_REQUEST).textMessage("Some parent does not exist!");
 
             Animal firstParent = firstParentOpt.get();
             Animal secondParent = secondParentOpt.get();
@@ -135,45 +79,73 @@ public class UserController {
             String firstParentOwner = firstParent.getOwner();
             String secondParentOwner = secondParent.getOwner();
 
-            if (!firstParentOwner.equals(user.getId()) || !secondParentOwner.equals(user.getId())) return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            if (!firstParentOwner.equals(user.getId()) || !secondParentOwner.equals(user.getId())) return ErrorResponse.httpStatus(HttpStatus.BAD_REQUEST).textMessage("Some Owner does not exist!");
 
             Animal child = firstParent.breed(user.getId(), breedAnimalReq.getAnimalName(), secondParent.getGenome());
             Animal savedChild = animalRepository.save(child);
 
             user.setSaldo(user.getSaldo()-breedAnimalReq.getAmount());
-            User userSaved = userRepository.save(user);
+            userRepository.save(user);
 
-            return ResponseEntity.status(HttpStatus.OK).body(savedChild);
+            return SuccessResponse.httpStatus(HttpStatus.CREATED).build(savedChild);
         } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ErrorResponse.httpStatus(HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @PostMapping("/createUserByTextFile")
+    public Response createUserByTextFile(@RequestParam("file") MultipartFile file) {
+        try {
+            if(file.isEmpty()) return ErrorResponse.httpStatus(HttpStatus.BAD_REQUEST).textMessage("File is empty!");
+
+            String[] data = new String(file.getBytes(), StandardCharsets.UTF_8).split("\n");
+            String username = data[0];
+            String email = data[1];
+            String password = data[2];
+
+            User user = new User(username, email, password);
+            String hashedPassword = passwordEncoder.encode(user.getPassword());
+            user.setPassword(hashedPassword);
+
+            User savedUser = userRepository.save(user);
+            return SuccessResponse.httpStatus(HttpStatus.CREATED).textMessage("User Created Succesfully!").build(savedUser);
+        } catch(DataIntegrityViolationException e) {
+            System.err.println("Error creating user: " + e.getMessage());
+            return ErrorResponse.httpStatus(HttpStatus.UNPROCESSABLE_ENTITY);
+        } catch(Exception e) {
+            System.err.println("Error creating user: " + e.getMessage());
+            return ErrorResponse.httpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     @PostMapping("/login")
-    public ResponseEntity<User> login(@Valid @RequestBody User loginRequest) {
+    public Response login(@Valid @RequestBody User loginRequest) {
         User user = userRepository.findByEmail(loginRequest.getEmail());
+        Admin admin = adminRepository.findByEmail(loginRequest.getEmail());
 
         if (user != null && passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            return ResponseEntity.status(HttpStatus.OK).body(user);
+            return SuccessResponse.httpStatus(HttpStatus.OK).textMessage("User Loginned Succesfully").build(user);
+        } else if(admin != null && passwordEncoder.matches(loginRequest.getPassword(), admin.getPassword())) {
+            return SuccessResponse.httpStatus(HttpStatus.OK).textMessage("Admin Loginned Succesfully").build(admin);
         } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            return ErrorResponse.httpStatus(HttpStatus.UNAUTHORIZED).textMessage("Password or login are incorrect!");
         }
     }
 
     @PostMapping
-    public ResponseEntity<User> createUser(@Valid @RequestBody User user) {
+    public Response createUser(@Valid @RequestBody User user) {
         try {
             String hashedPassword = passwordEncoder.encode(user.getPassword());
             user.setPassword(hashedPassword);
 
             User savedUser = userRepository.save(user);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedUser);
+            return SuccessResponse.httpStatus(HttpStatus.CREATED).textMessage("User Created!").build(savedUser);
         } catch(DataIntegrityViolationException e) {
             System.err.println("Error creating user: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).build();
+            return ErrorResponse.httpStatus(HttpStatus.UNPROCESSABLE_ENTITY).textMessage("Incorrect properties!");
         } catch(Exception e) {
             System.err.println("Error creating user: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            return ErrorResponse.httpStatus(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
