@@ -79,11 +79,18 @@ public class TransactionsController {
             if(!transactionOptional.isPresent()) return ErrorResponse.httpStatus(HttpStatus.NOT_FOUND);
             Transaction transaction = transactionOptional.get();
 
-            User user = userRepository.findByEmail(recipentApprovement.getSenderEmail());
+            User user = userRepository.findByEmail(recipentApprovement.getRecipentEmail());
+            User senderUser = userRepository.findByEmail(recipentApprovement.getSenderEmail());
 
             if(user != null && passwordEncoder.matches(recipentApprovement.getRecipentPassword(), user.getPassword())) {
                 transaction.setRecipentApproved(recipentApprovement.getAccepted());
                 transaction.setStatus(recipentApprovement.getAccepted() ? "Recipent Accepted" : "Recipent Rejected");
+
+                user.setSaldo(user.getSaldo()-transaction.getAmount());
+                senderUser.setSaldo(senderUser.getSaldo()+transaction.getAmount());
+
+                userRepository.save(user);
+                userRepository.save(senderUser);
 
                 Transaction updatedTransaction = transactionRepository.save(transaction);
                 return SuccessResponse.httpStatus(HttpStatus.ACCEPTED).build(updatedTransaction);

@@ -124,7 +124,7 @@ public class AnimalsController {
             User user = userRepository.findByEmail(changeOwnerReq.getNewOwnerEmail());
 
             boolean loginCondition = passwordEncoder.matches(changeOwnerReq.getNewOwnerPassword(), user.getPassword());
-            boolean transactionCondition = (user.getEmail().equals(transaction.getSenderEmail()) && transaction.getRecipentApproved());
+            boolean transactionCondition = (user.getEmail().equals(transaction.getRecipentEmail()) && transaction.getRecipentApproved());
 
             if(user != null && (loginCondition && transactionCondition)) {
                 animal.setOwner(user.getId());
