@@ -39,6 +39,12 @@ public class UserController {
     @Autowired
     private AdminRepository adminRepository;
 
+    /**
+     * Route that change rank of the user to admin to give him more privilages
+     * 
+     * @param admin
+     * @return
+     */
     @PostMapping("changeRank")
     public Response changeRank(@RequestBody Admin admin) {
         try {
@@ -60,6 +66,14 @@ public class UserController {
         }
     }
 
+    /**
+     * Route used to breed two ganimals in order to create the new one. To do this it is required
+     * to pay some breeding fee. Ganimals must be the same gender and user must have the right amount 
+     * of money
+     * 
+     * @param breedAnimalReq
+     * @return Ganimal
+     */
     @PostMapping("/breedAnimal")
     public Response breedAnimal(@RequestBody BreedAnimalReq breedAnimalReq) {
         if(breedAnimalReq.getAmount() < 0) return ErrorResponse.httpStatus(HttpStatus.BAD_REQUEST).textMessage("Amount must be positive!");
@@ -93,6 +107,12 @@ public class UserController {
         }
     }
 
+    /**
+     * Route that allows user to create new account sending text file
+     * 
+     * @param file
+     * @return
+     */
     @PostMapping("/createUserByTextFile")
     public Response createUserByTextFile(@RequestParam("file") MultipartFile file) {
         try {
@@ -118,6 +138,13 @@ public class UserController {
         }
     }
 
+    /**
+     * Route used to get user informations about his ganimals and main route to login to
+     * the website in order to use it furtherly
+     * 
+     * @param loginRequest
+     * @return
+     */
     @PostMapping("/login")
     public Response login(@Valid @RequestBody User loginRequest) {
         User user = userRepository.findByEmail(loginRequest.getEmail());
@@ -132,6 +159,12 @@ public class UserController {
         }
     }
 
+    /**
+     * Route that creates new user
+     * 
+     * @param user
+     * @return
+     */
     @PostMapping
     public Response createUser(@Valid @RequestBody User user) {
         try {

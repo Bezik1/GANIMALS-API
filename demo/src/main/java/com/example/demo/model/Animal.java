@@ -11,6 +11,12 @@ import com.example.demo.types.Animals.Genom;
 
 import jakarta.validation.constraints.Size;
 
+/**
+ * Ganimal is an virtual representation of animal with properites like
+ * base color, eye color, special color, etc. The data about its characteristics
+ * is stored in hexadecimal gen code. Ganimals from the backend point of view are
+ * just the collection of objects paired with some user.
+ */
 @Document(collection = "Animals")
 public class Animal {
     @Id
@@ -35,6 +41,12 @@ public class Animal {
         this.genCode = genCode;
     }
 
+    /**
+     * Analyze animal genCode as string and return an
+     * object with useful access to genome properties
+     * @param parentStirng
+     * @return Genom
+     */
     public static Genom analyzeParentString(String parentString) {
         boolean gender = parentString.charAt(0) == '1';
 
@@ -64,6 +76,16 @@ public class Animal {
                             environmentAlleles, environment, clawsAlleles, hasClaws, spikesAlleles, hasSpikes);
     }
 
+
+    /**
+     * Combine genoms of two ganimals with respect to allels,
+     * in such a way that most of the properties are from the
+     * parent with dominant allel
+     *
+     * @param firstParentGenom
+     * @param secondParentGenom
+     * @return Genom
+     */
     private Genom combineGenoms(Genom firstParentGenom, Genom secondParentGenom) {
         boolean gender = Math.random() >= 0.5;
 
@@ -93,6 +115,13 @@ public class Animal {
                         environmentAlleles, environment, clawsAlleles, hasClaws, spikesAlleles, hasSpikes);
     }
 
+    /**
+     * Returns all possible combinations of two pairs of allels.
+     * 
+     * @param alleles1
+     * @param alleles2
+     * @return List<String>
+     */
     private List<String> getPossibleAllelsCombintations(String alleles1, String alleles2) {
         List<String> possibleAllelsCombinations = new ArrayList<String>();
 
@@ -105,6 +134,15 @@ public class Animal {
         return possibleAllelsCombinations;
     }
 
+
+    /**
+     * Use the function getPossibleAllelsCombintations and returns
+     * one of the combination with random probability
+     * 
+     * @param alleles1
+     * @param alleles2
+     * @return
+     */
     private String getCombinedAlleles(String alleles1, String alleles2) {
         List<String> possibleAllelsCombinations = getPossibleAllelsCombintations(alleles1, alleles2);
         int index = (int) (Math.random() * (float) (possibleAllelsCombinations.size()));
@@ -112,6 +150,15 @@ public class Animal {
         return possibleAllelsCombinations.get(index);
     }
 
+    /**
+     * Create a new ganimal based on the gen code of current ganimal and
+     * some other, of whose the genCode is passed down to the function
+     * 
+     * @param owner
+     * @param name
+     * @param secondParentGenCode
+     * @return
+     */
     public Animal breed(String owner, String name, String secondParentGenCode) {
         Genom firstParentGenom = analyzeParentString(this.genCode);
         Genom secondParentGenom = analyzeParentString(secondParentGenCode);
@@ -126,6 +173,26 @@ public class Animal {
         return new Animal(owner, name, combinedStringifiedGenom);
     }
 
+    /**
+     * Generate Wild Ganimal Genome in such a way that:
+     *  first bit is gender 0/1
+     *  next bit is carnivour allels
+     *  next bit is if the ganimal is carnivour
+     *  next bit is baseColor allels
+     *  next eight bits are base color representation
+     *  next bit is eye color allels
+     *  next eight bits are eye color representation
+     *  next bit is special color allels
+     *  next eight bit are special color representation
+     *  next bit is environmental allel
+     *  next bit represents enviornemt
+     *  next bit is claws allels
+     *  next bit is if ganimal has claws
+     *  next bit is spikes allels
+     *  last bit is if ganimal has spikes
+     *
+     * @return String
+     */
     public static String generateWildAnimalGeneticCode() {
         String gender = String.format("%X", (int) (Math.random() * 2));
 

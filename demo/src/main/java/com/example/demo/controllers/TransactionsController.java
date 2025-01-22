@@ -37,6 +37,14 @@ public class TransactionsController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    /**
+     * The function is getting user transactions that the user is the
+     * recipent of, next user has the option to approve the transaction
+     * that status is pending
+     *
+     * @param recipentEmail
+     * @return Transactions[]
+     */
     @GetMapping("/getTransactions/{recipentEmail}")
     public Response getUserTransactions(@PathVariable String recipentEmail) {
         try {
@@ -50,6 +58,13 @@ public class TransactionsController {
         }
     }
 
+    /**
+     * Sends Transactions request to another user to ask him if he's willing to
+     * buy some ganimal on approved amount of money
+     *
+     * @param sendTransactionReq
+     * @return
+     */
     @PostMapping("/sendTransaction")
     public Response sendTransactionRequest(@Valid @RequestBody SendTransactionReq sendTransactionReq) {
         try {
@@ -70,6 +85,17 @@ public class TransactionsController {
         }
     }
 
+    /**
+     * Confirms the terms of transactions with respect to some transactionId, that route
+     * use to identify the transaction. After finding the transaction and checking if it was approved
+     * balance on both accounts is updated. Next Frontend is sending the request to change owner of ganimal
+     * if transaction was succesfully approved and it is end of the transaction
+     *
+     *
+     * @param transactionId
+     * @param recipentApprovement
+     * @return
+     */
     @PutMapping("/confirmTransactionTerms/{transactionId}")
     public Response confirmTransactionTerms(@PathVariable String transactionId,
                                                                 @Valid @RequestBody RecipentApprovementReq recipentApprovement) {

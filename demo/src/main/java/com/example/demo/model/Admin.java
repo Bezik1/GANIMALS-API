@@ -2,6 +2,9 @@ package com.example.demo.model;
 
 import org.springframework.data.mongodb.core.mapping.Document;
 
+/**
+ * Extended user class that has more privilages than regular one
+ */
 @Document(collection = "Admins")
 public class Admin extends User {
     private String role;

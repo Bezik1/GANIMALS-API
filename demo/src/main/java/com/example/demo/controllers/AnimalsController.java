@@ -47,6 +47,11 @@ public class AnimalsController {
     @Autowired
     private TransactionRepository transactionRepository;
 
+    /**
+     * Send the genome properties of the ganimal in the form of the txt file
+     * @param animalId
+     * @return Text File
+     */
     @GetMapping("/download/{animalId}")
     public ResponseEntity<byte[]> downloadAnimalTraits(@PathVariable String animalId) {
         try {
@@ -85,6 +90,11 @@ public class AnimalsController {
         }
     }
 
+    /**
+     * Returns user ganimals
+     * @param userId
+     * @return Ganimal[]
+     */
     @PostMapping("/getUserAnimals/{userId}")
     public Response getUserAnimals(@PathVariable String userId) {
         try {
@@ -95,6 +105,10 @@ public class AnimalsController {
         }
     }
 
+    /**
+     * Creates wild animal without an owner to the database
+     * @return
+     */
     @PostMapping("/createWildAnimal")
     public Response createWildAnimal() {
         String wildAnimalGenCode = Animal.generateWildAnimalGeneticCode();
@@ -104,6 +118,14 @@ public class AnimalsController {
         return SuccessResponse.httpStatus(HttpStatus.CREATED).build(savedWildAnimal);
     }
 
+
+    /**
+     * Changes the owner of the ganimal after checking if transaction has been
+     * approved by the recipent, then the function changes owner of the ganimal
+     *
+     * @param changeOwnerReq
+     * @return
+     */
     @PutMapping("/changeOwner")
     public Response changeOwner(@Valid @RequestBody ChangeOwnerReq changeOwnerReq) {
         try {

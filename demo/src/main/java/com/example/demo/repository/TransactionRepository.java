@@ -9,5 +9,11 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface TransactionRepository extends MongoRepository<Transaction, String> {
+    /**
+     * Gets transactions by the recipent email
+     * 
+     * @param recipentEmail
+     * @return Transaction[]
+     */
     List<Transaction> getTransactionsByRecipentEmail(String recipentEmail);
 }
